@@ -5,7 +5,8 @@ from astropy.io import fits
 
 covs = glob('cov_*_mocks.fits')
 covs.sort()
-nmocks = [10,20,50,100]
+nmocks = [10,25,50,100]
+s = np.linspace(0,40,5)
 
 cov_gt = fits.getdata('cov_gt.fits')
 U,L,V = np.linalg.svd(cov_gt)
@@ -14,9 +15,21 @@ gt = np.linalg.inv(cov_gt_sq)
 
 devs = []
 
-for file in covs:
-    matrix = fits.getdata(file)
+for file in range(len(covs)):
+    matrix = fits.getdata(covs[file])
     T = gt@matrix@gt
-    devs.append(np.stdev(T))
+    devs.append(np.std(T))
 
-plt.plot(nmocks,devs)
+plt.figure()
+plt.pcolormesh(s,s,gt@cov_gt@gt)
+plt.title('T, mocks=100')
+plt.xlabel(r'$S_i$'); plt.ylabel(r'$S_j$')
+plt.colorbar()
+plt.savefig('T_100.pdf',dpi=300)
+plt.close()
+
+devs.append(np.std(gt@cov_gt@gt))
+plt.plot(nmocks,devs,'o')
+plt.xlabel(r'$N_{\rm mocks}$')
+plt.ylabel('RMS')
+plt.savefig('rms.pdf',dpi=300)

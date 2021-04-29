@@ -7,9 +7,9 @@ from functions import correlation, ft_correlation
 
 files = glob('sims/logn*')
 files.sort()
-nmocks = 50
+nmocks = 10
 rmax = 40; ns = 5
-si = np.linspace(0,rmax,ns); sj = np.linspace(0,rmax,ns)
+s = np.linspace(0,rmax,ns)
 cov = np.zeros((ns,ns))
 
 for i in tqdm(range(ns)):
@@ -18,18 +18,27 @@ for i in tqdm(range(ns)):
         CF_j = np.zeros(nmocks)
         for index in range(nmocks):
             fn,bins = correlation(files[index])
-            CF_i[index] = fn[np.argmin(abs(si[i]-bins))]
-            CF_j[index] = fn[np.argmin(abs(sj[j]-bins))]    
+            CF_i[index] = fn[np.argmin(abs(s[i]-bins))]
+            CF_j[index] = fn[np.argmin(abs(s[j]-bins))]    
         cov[i,j] = np.sum(CF_i*CF_j)/nmocks-np.sum(CF_i)*np.sum(CF_j)/nmocks**2
 cov = cov + cov.T - np.diag(np.diag(cov))
 
 hdu = fits.PrimaryHDU(cov); hdu.writeto(f'cov_{nmocks}_mocks.fits')
-
-plt.pcolormesh(si,sj,cov)
+plt.figure()
+plt.pcolormesh(s,s,cov)
 plt.title('Covariance Matrix, '+r'$N_{\rm mocks}$'+f'={nmocks}')
 plt.xlabel(r'$S_i$'); plt.ylabel(r'$S_j$')
 cb = plt.colorbar()
 plt.savefig(f'cov_{nmocks}.pdf',dpi=300)
+plt.close()
+
+plt.figure()
+plt.pcolormesh(s,s,np.linalg.inv(cov))
+plt.title('Inverse, '+r'$N_{\rm mocks}$'+f'={nmocks}')
+plt.xlabel(r'$S_i$'); plt.ylabel(r'$S_j$')
+cb = plt.colorbar()
+plt.savefig(f'inv_{nmocks}.pdf',dpi=300)
+plt.close()
 
 ###############################part 1#########################################
 #read in data

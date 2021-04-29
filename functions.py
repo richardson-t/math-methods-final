@@ -69,7 +69,8 @@ def counts_interp(data,X,Y,Z):
     counts = interp(X,Y,Z)
     return counts
 
-def bin_func(X,Y,Z,r_in,r_out):
+def bin_func(grid_points,r_in,r_out):
+    X,Y,Z = np.meshgrid(grid_points,grid_points,grid_points)
     R = np.sqrt(X**2+Y**2+Z**2)
     phi = np.zeros(R.shape)
     norm = 4*np.pi/3*(r_out**3-r_in**3)
@@ -82,14 +83,14 @@ def ft_correlation(file,r_max=40,nbins=5,V=1e6):
     bin_edges = np.linspace(0,r_max,nbins+1)
     bin_centers = (bin_edges[1:]+bin_edges[:-1])/2
     grid_points = np.linspace(-50,50,101)
-    X,Y,Z = np.meshgrid(grid_points,grid_points,grid_points)
     DCF = np.zeros(nbins)
     pad = 300; init = len(grid_points)
     for i in range(nbins):
         D = counts(data,grid_points)
-        phi = bin_func(X,Y,Z,bin_edges[i],bin_edges[i+1])
+        phi = bin_func(grid_points,bin_edges[i],bin_edges[i+1])
         product = fftn(D,s=[pad,pad,pad])*np.conjugate(fftn(phi,s=[pad,pad,pad]))
-        DCF[i] = np.sum(D*np.real(ifftn(product,s=[init,init,init])))
+        integrand = D*np.real(ifftn(product,s=[init,init,init]))
+        DCF[i] = np.sum(integrand)
             
     npoints,nds = data.shape
     n = npoints/V

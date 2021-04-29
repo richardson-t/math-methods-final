@@ -8,6 +8,7 @@ power = np.loadtxt('pk_z0d55_planck15.txt',skiprows=2)
 cov = fits.getdata('cov_gt.fits')
 cov_inv = np.linalg.inv(cov)
 average_CF = Table.read('avg_CF.fits')
+FT_CF = Table.read('avg_FT_CF.fits')
 
 k = power[:,0]
 p_lin = power[:,1]
@@ -36,5 +37,10 @@ b_sq = num/den
 print(np.sqrt(b_sq))
 
 plt.figure()
-plt.plot(bin_centers,CF_bin)
-plt.plot(bin_centers,average_CF['CF']/b_sq)
+plt.plot(bin_centers,CF_bin,label='Model (binned)')
+plt.plot(bin_centers,average_CF['CF']/b_sq,label='Measured (Counting)')
+plt.plot(bin_centers,FT_CF['CF']/16,label='Measured (FT)')
+plt.title(r'$b_{\rm count}$'+f'={str(np.sqrt(b_sq))[:5]}')
+plt.xlabel('s (Mpc)'); plt.ylabel('2PCF')
+plt.legend()
+#plt.savefig('fit_model.pdf',dpi=300)
