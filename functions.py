@@ -80,15 +80,19 @@ def bin_func(grid_points,r_in,r_out):
 
 def ft_correlation(file,r_max=40,nbins=5,V=1e6):
     data = process_file(file)
+    
     bin_edges = np.linspace(0,r_max,nbins+1)
     bin_centers = (bin_edges[1:]+bin_edges[:-1])/2
-    grid_points = np.linspace(-50,50,101)
     DCF = np.zeros(nbins)
+    
+    grid_points = np.linspace(-50,50,101)
     pad = 300; init = len(grid_points)
+    D = counts(data,grid_points)
+    D_tr = fftn(D,s=[pad,pad,pad])
+    
     for i in range(nbins):
-        D = counts(data,grid_points)
         phi = bin_func(grid_points,bin_edges[i],bin_edges[i+1])
-        product = fftn(D,s=[pad,pad,pad])*np.conjugate(fftn(phi,s=[pad,pad,pad]))
+        product = D_tr*np.conjugate(fftn(phi,s=[pad,pad,pad]))
         integrand = D*np.real(ifftn(product,s=[init,init,init]))
         DCF[i] = np.sum(integrand)
             
