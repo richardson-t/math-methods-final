@@ -3,42 +3,40 @@ import matplotlib.pyplot as plt
 from glob import glob
 from tqdm import tqdm
 from astropy.io import fits
-from functions import correlation, ft_correlation
+from functions import correlation
 
 files = glob('sims/logn*')
 files.sort()
-nmocks = 10
-rmax = 40; ns = 5
-s = np.linspace(0,rmax,ns)
-cov = np.zeros((ns,ns))
+nmocks = np.linspace(10,100,10)
+nbins = 5
 
-for i in tqdm(range(ns)):
-    for j in tqdm(range(i,ns)):
-        CF_i = np.zeros(nmocks)
-        CF_j = np.zeros(nmocks)
-        for index in range(nmocks):
-            fn,bins = correlation(files[index])
-            CF_i[index] = fn[np.argmin(abs(s[i]-bins))]
-            CF_j[index] = fn[np.argmin(abs(s[j]-bins))]    
-        cov[i,j] = np.sum(CF_i*CF_j)/nmocks-np.sum(CF_i)*np.sum(CF_j)/nmocks**2
-cov = cov + cov.T - np.diag(np.diag(cov))
+for n in nmocks:
+    n = int(n)
+    CF = np.zeros((nbins,nbins,n))
+    CF_t = np.zeros((nbins,nbins,n))
+    for mock in tqdm(range(n)):
+        fn,bins = correlation(files[mock])
+        CF[:,:,mock],CF_t[:,:,mock] = np.meshgrid(fn,fn)
+          
+    cov = np.sum(CF*CF_t,axis=-1)/n-np.sum(CF,axis=-1)*np.sum(CF_t,axis=-1)/n**2
+    hdu = fits.PrimaryHDU(cov); hdu.writeto(f'fits/cov_{n}_mocks.fits',overwrite=True)
 
-hdu = fits.PrimaryHDU(cov); hdu.writeto(f'cov_{nmocks}_mocks.fits')
-plt.figure()
-plt.pcolormesh(s,s,cov)
-plt.title('Covariance Matrix, '+r'$N_{\rm mocks}$'+f'={nmocks}')
-plt.xlabel(r'$S_i$'); plt.ylabel(r'$S_j$')
-cb = plt.colorbar()
-plt.savefig(f'cov_{nmocks}.pdf',dpi=300)
-plt.close()
+    s = np.linspace(0,40,nbins)
+    plt.figure()
+    plt.pcolormesh(s,s,cov)
+    plt.title('Covariance Matrix, '+r'$N_{\rm mocks}$'+f'={n}')
+    plt.xlabel(r'$S_i$'); plt.ylabel(r'$S_j$')
+    cb = plt.colorbar()
+    plt.savefig(f'covs/cov_{n}.pdf',dpi=300)
+    plt.close()
 
-plt.figure()
-plt.pcolormesh(s,s,np.linalg.inv(cov))
-plt.title('Inverse, '+r'$N_{\rm mocks}$'+f'={nmocks}')
-plt.xlabel(r'$S_i$'); plt.ylabel(r'$S_j$')
-cb = plt.colorbar()
-plt.savefig(f'inv_{nmocks}.pdf',dpi=300)
-plt.close()
+    plt.figure()
+    plt.pcolormesh(s,s,np.linalg.inv(cov))
+    plt.title('Inverse, '+r'$N_{\rm mocks}$'+f'={n}')
+    plt.xlabel(r'$S_i$'); plt.ylabel(r'$S_j$')
+    cb = plt.colorbar()
+    plt.savefig(f'invs/inv_{n}.pdf',dpi=300)
+    plt.close()
 
 ###############################part 1#########################################
 #read in data
